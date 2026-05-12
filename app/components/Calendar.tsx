@@ -119,14 +119,14 @@ export default function Calendar() {
                   return (
                     <div key={m} onClick={() => setModal({ service: svc.id, month: m })} style={{
                       minHeight: 52, borderRadius: 5, padding: 4, cursor: 'pointer',
-                      background: active ? svc.bg : '#faf9f6',
-                      border: `1px solid ${active ? svc.color + '33' : '#ede9e3'}`,
+                      background: active ? '#eeeae2' : '#faf9f6',
+                      border: `1px solid ${active ? '#c4bdb0' : '#ede9e3'}`,
                       position: 'relative', transition: 'border-color 0.1s',
                     }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = svc.color + '88')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = active ? svc.color + '33' : '#ede9e3')}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#9d9488')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = active ? '#c4bdb0' : '#ede9e3')}
                     >
-                      {active && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: svc.color + '66', borderRadius: '0 0 4px 4px' }}></div>}
+                      {active && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: '#b8b0a4', borderRadius: '0 0 4px 4px' }}></div>}
                       {acts.map((a, i) => {
                         const ts = typeStyle(a.type)
                         return (
@@ -136,7 +136,7 @@ export default function Calendar() {
                           </div>
                         )
                       })}
-                      <div style={{ position: 'absolute', top: 2, right: 3, fontSize: 14, color: svc.color, opacity: 0.25, lineHeight: 1, pointerEvents: 'none' }}>+</div>
+                      <div style={{ position: 'absolute', top: 2, right: 3, fontSize: 14, color: '#aaa', opacity: 0.5, lineHeight: 1, pointerEvents: 'none' }}>+</div>
                     </div>
                   )
                 })}
