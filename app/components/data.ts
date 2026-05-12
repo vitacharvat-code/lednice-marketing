@@ -41,14 +41,14 @@ export const SERVICES: Record<string, Service[]> = {
       note: 'Leden–únor nejslabší. Od března promo na zahájení sezony. Léto a vánoce jsou vrcholy.',
     },
     {
-      id: 'firemni_jaro',
-      name: 'Firemní akce – jaro',
-      sub: 'duben–červen · st–pá · teambuilding',
+      id: 'firemni',
+      name: 'Firemní akce & teambuilding',
+      sub: 'únor–červen · září–listopad · st–pá',
       color: '#8a2f56',
       bg: '#fdf0f5',
-      // Firemní sezona duben-červen, příprava od února
-      season: [0,1,1,1,1,1,0,0,0,0,0,0],
-      note: 'Hlavní dny: středa–pátek. Po a út slabší → vhodné pro místní akce. Kampaně na firemní klientelu spouštět v únoru–březnu.',
+      // Firemní sezona: jaro duben-červen + podzim září-listopad, příprava od února resp. července
+      season: [0,1,1,1,1,1,0,0,1,1,1,0],
+      note: 'Hlavní dny: středa–pátek. Po a út slabší → vhodné pro lokální akce. Jarní sezona: kampaně spouštět v únoru–březnu. Podzimní sezona: kampaně spouštět v červenci.',
     },
     {
       id: 'turisticka',
@@ -79,16 +79,6 @@ export const SERVICES: Record<string, Service[]> = {
       // Program pro místní a studenty – pondělí a úterý v jarní a podzimní sezoně
       season: [0,0,0,1,1,1,0,0,1,1,0,0],
       note: 'Pondělí a úterý jsou slabé dny → speciální program pro místní a studenty (quiz nighty, ochutnávky, akce s Mendelkou apod.).',
-    },
-    {
-      id: 'firemni_podzim',
-      name: 'Firemní akce – podzim',
-      sub: 'září–Sv. Martin · teambuilding',
-      color: '#6b3a8a',
-      bg: '#f5eeff',
-      // Firemní podzim září-listopad, Sv. Martin 11.11.
-      season: [0,0,0,0,0,0,0,0,1,1,1,0],
-      note: 'Týdenní firemní akce (st–pá), o víkendech turisté – závisí na počasí. Sezona končí Sv. Martinem (11. 11.). Kampaně spouštět v červenci.',
     },
     {
       id: 'vanocni',
