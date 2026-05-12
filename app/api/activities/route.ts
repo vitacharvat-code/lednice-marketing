@@ -1,22 +1,16 @@
-import { put, head, getDownloadUrl } from '@vercel/blob'
+import { put, list } from '@vercel/blob'
 import { NextResponse } from 'next/server'
 
-const BLOB_KEY = 'activities.json'
-
 async function loadActivities(): Promise<Record<string, any[]>> {
-  try {
-    const blob = await head(BLOB_KEY)
-    const res = await fetch(blob.url)
-    return await res.json()
-  } catch {
-    return {}
-  }
+  const { blobs } = await list({ prefix: 'activities.json' })
+  if (blobs.length === 0) return {}
+  const res = await fetch(blobs[0].url)
+  return res.json()
 }
 
 export async function GET() {
   try {
-    const data = await loadActivities()
-    return NextResponse.json(data)
+    return NextResponse.json(await loadActivities())
   } catch {
     return NextResponse.json({})
   }
@@ -24,11 +18,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { key, activities } = body
+    const { key, activities } = await request.json()
     const all = await loadActivities()
     all[key] = activities
-    await put(BLOB_KEY, JSON.stringify(all), {
+    await put('activities.json', JSON.stringify(all), {
       access: 'public',
       contentType: 'application/json',
       addRandomSuffix: false,
