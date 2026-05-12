@@ -106,7 +106,10 @@ export default function Calendar() {
             {/* Service rows */}
             {services.map(svc => (
               <div key={svc.id} style={{ display: 'grid', gridTemplateColumns: '148px repeat(12, 1fr)', gap: 2, marginBottom: 2 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '6px 10px 6px 0' }}>
+                <div
+                  title={svc.note}
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '6px 10px 6px 0', cursor: svc.note ? 'help' : 'default' }}
+                >
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1714', lineHeight: 1.3 }}>{svc.name}</span>
                   <span style={{ fontSize: 10, color: '#999', marginTop: 1 }}>{svc.sub}</span>
                 </div>
