@@ -57,7 +57,7 @@ export default function Calendar() {
             <span style={{ fontSize: 22 }}>🍺</span>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.3px', color: '#1a1714' }}>Lednice Marketing</h1>
           </div>
-          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#7a7570' }}>Roční marketingový plán 2025</p>
+          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#7a7570' }}>Roční marketingový plán</p>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           {saving && <span style={{ fontSize: 12, color: '#9d6310', background: '#fdf6e7', padding: '3px 10px', borderRadius: 20, border: '1px solid #e8c97a' }}>Ukládám…</span>}
