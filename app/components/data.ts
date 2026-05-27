@@ -185,6 +185,7 @@ export const ACTIVITY_TYPES = [
 export interface Activity {
   text: string
   type: string
+  prepLead?: number  // kolik měsíců dopředu začít přípravu (0 = bez přípravy)
 }
 
 export interface PlanTask {

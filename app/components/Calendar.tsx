@@ -9,7 +9,7 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [modal, setModal] = useState<{ service: string; month: number } | null>(null)
-  const [form, setForm] = useState({ text: '', type: 'prep' })
+  const [form, setForm] = useState({ text: '', type: 'prep', prepLead: 0 })
   const [selectedCell, setSelectedCell] = useState<{ service: string; month: number } | null>(null)
   const [planDraft, setPlanDraft] = useState<CellPlan>({})
   const [newTask, setNewTask] = useState('')
@@ -41,6 +41,20 @@ export default function Calendar() {
 
   const cellKey = (svc: string, m: number) => `${company}__${svc}__${m}`
   const get = (svc: string, m: number): Activity[] => allActivities[cellKey(svc, m)] || []
+
+  // Ghost aktivity = aktivity z budoucích měsíců, které mají prepLead pokrývající tento měsíc
+  const getGhosts = (svc: string, m: number): Array<{ act: Activity; targetMonth: number }> => {
+    const ghosts: Array<{ act: Activity; targetMonth: number }> = []
+    for (let lead = 1; lead <= 3; lead++) {
+      const src = m + lead
+      if (src < 12) {
+        get(svc, src).forEach(a => {
+          if ((a.prepLead || 0) >= lead) ghosts.push({ act: a, targetMonth: src })
+        })
+      }
+    }
+    return ghosts
+  }
 
   const saveActivities = async (k: string, acts: Activity[]) => {
     setSaving(true)
@@ -77,8 +91,8 @@ export default function Calendar() {
   const addActivity = async () => {
     if (!modal || !form.text.trim()) return
     const k = cellKey(modal.service, modal.month)
-    await saveActivities(k, [...get(modal.service, modal.month), { text: form.text.trim(), type: form.type }])
-    setForm({ text: '', type: 'prep' })
+    await saveActivities(k, [...get(modal.service, modal.month), { text: form.text.trim(), type: form.type, prepLead: form.prepLead }])
+    setForm({ text: '', type: 'prep', prepLead: 0 })
     setModal(null)
   }
 
@@ -187,6 +201,7 @@ export default function Calendar() {
                 </div>
                 {Array.from({ length: 12 }, (_, m) => {
                   const acts = get(svc.id, m)
+                  const ghosts = getGhosts(svc.id, m)
                   const active = svc.season[m] === 1
                   const isSelected = selectedCell?.service === svc.id && selectedCell?.month === m
                   const hasPlan = !!(allPlans[cellKey(svc.id, m)] && Object.values(allPlans[cellKey(svc.id, m)]).some(v => v && (Array.isArray(v) ? v.length > 0 : v !== '')))
@@ -205,11 +220,28 @@ export default function Calendar() {
                     >
                       {active && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: '#b8b0a4', borderRadius: '0 0 4px 4px' }}></div>}
                       {hasPlan && <div style={{ position: 'absolute', top: 3, left: 3, width: 5, height: 5, borderRadius: '50%', background: '#9d6310' }}></div>}
+                      {/* Ghost chipy (příprava budoucích aktivit) */}
+                      {ghosts.map((g, i) => {
+                        const ts = typeStyle(g.act.type)
+                        return (
+                          <div key={`g${i}`} title={`Příprava → ${FULL_MONTHS[g.targetMonth]}`} style={{ fontSize: 10, lineHeight: 1.25, marginBottom: 2, padding: '2px 4px', borderRadius: 3, background: '#fff', color: ts.color, border: `1px dashed ${ts.color}88`, wordBreak: 'break-word', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, opacity: 0.75 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <span style={{ fontSize: 9 }}>⏳</span>
+                              <span style={{ fontStyle: 'italic' }}>{g.act.text}</span>
+                            </span>
+                            <span style={{ fontSize: 9, opacity: 0.7, flexShrink: 0, whiteSpace: 'nowrap' }}>→ {MONTHS[g.targetMonth]}</span>
+                          </div>
+                        )
+                      })}
+                      {/* Reálné aktivity */}
                       {acts.map((a, i) => {
                         const ts = typeStyle(a.type)
                         return (
                           <div key={i} style={{ fontSize: 10, lineHeight: 1.25, marginBottom: 2, padding: '2px 4px', borderRadius: 3, background: ts.bg, color: ts.color, border: `0.5px solid ${ts.color}44`, wordBreak: 'break-word', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-                            <span>{a.text}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              {(a.prepLead || 0) > 0 && <span title={`Příprava ${a.prepLead} měs. dopředu`} style={{ fontSize: 9, opacity: 0.6 }}>●</span>}
+                              <span>{a.text}</span>
+                            </span>
                             <span onClick={e => { e.stopPropagation(); removeActivity(svc.id, m, i) }} style={{ cursor: 'pointer', opacity: 0.5, flexShrink: 0, fontSize: 11, lineHeight: 1 }}>×</span>
                           </div>
                         )
@@ -249,9 +281,38 @@ export default function Calendar() {
                 onKeyDown={e => e.key === 'Enter' && addActivity()}
                 placeholder="Popis aktivity…" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #ddd', fontFamily: 'inherit', fontSize: 14, marginBottom: 10, outline: 'none', boxSizing: 'border-box' }} />
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #ddd', fontFamily: 'inherit', fontSize: 14, marginBottom: 16, background: '#fff', boxSizing: 'border-box' }}>
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #ddd', fontFamily: 'inherit', fontSize: 14, marginBottom: 10, background: '#fff', boxSizing: 'border-box' }}>
                 {ACTIVITY_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
+              {/* Příprava */}
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>⏳ Zahájit přípravu</p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[0, 1, 2, 3].map(n => {
+                    const targetMonth = modal ? modal.month : 0
+                    const prepMonth = targetMonth - n
+                    const label = n === 0 ? 'Bez přípravy' : `${n} měs. před${prepMonth >= 0 ? ` (${MONTHS[prepMonth]})` : ''}`
+                    return (
+                      <button
+                        key={n}
+                        onClick={() => setForm(f => ({ ...f, prepLead: n }))}
+                        style={{
+                          flex: 1, padding: '6px 4px', borderRadius: 7, fontSize: 11, fontFamily: 'inherit', cursor: 'pointer',
+                          border: `1.5px solid ${form.prepLead === n ? '#1a1714' : '#ddd'}`,
+                          background: form.prepLead === n ? '#1a1714' : '#fff',
+                          color: form.prepLead === n ? '#fff' : '#666',
+                          transition: 'all 0.1s',
+                        }}
+                      >{label}</button>
+                    )
+                  })}
+                </div>
+                {form.prepLead > 0 && modal && modal.month - form.prepLead >= 0 && (
+                  <p style={{ margin: '6px 0 0', fontSize: 11, color: '#9d6310' }}>
+                    ⏳ Ghost chip se zobrazí v: <b>{Array.from({ length: form.prepLead }, (_, i) => FULL_MONTHS[modal.month - form.prepLead + i]).join(', ')}</b>
+                  </p>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button onClick={() => setModal(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer', color: '#666' }}>Zrušit</button>
                 <button onClick={addActivity} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#1a1714', color: '#fff', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Přidat</button>
