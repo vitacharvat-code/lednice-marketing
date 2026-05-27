@@ -248,7 +248,7 @@ export default function Calendar() {
                       })}
                       {/* + button */}
                       <div
-                        onClick={e => { e.stopPropagation(); setModal({ service: svc.id, month: m }); setForm({ text: '', type: 'prep' }) }}
+                        onClick={e => { e.stopPropagation(); setModal({ service: svc.id, month: m }); setForm({ text: '', type: 'prep', prepLead: 0 }) }}
                         title="Přidat aktivitu"
                         style={{
                           position: 'absolute', top: 2, right: 3, fontSize: 14, color: '#999',
