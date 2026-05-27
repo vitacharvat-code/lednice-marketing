@@ -251,12 +251,12 @@ export default function Calendar() {
                         onClick={e => { e.stopPropagation(); setModal({ service: svc.id, month: m }); setForm({ text: '', type: 'prep', prepLead: 0 }) }}
                         title="Přidat aktivitu"
                         style={{
-                          position: 'absolute', top: 2, right: 3, fontSize: 14, color: '#999',
-                          lineHeight: 1, cursor: 'pointer', padding: '0 2px',
-                          borderRadius: 3, transition: 'color 0.1s',
+                          position: 'absolute', bottom: 3, right: 4, fontSize: 13, color: '#bbb',
+                          lineHeight: 1, cursor: 'pointer', padding: '1px 3px',
+                          borderRadius: 3, transition: 'color 0.1s', fontWeight: 600,
                         }}
                         onMouseEnter={e => (e.currentTarget.style.color = '#1a1714')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#999')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#bbb')}
                       >+</div>
                     </div>
                   )
