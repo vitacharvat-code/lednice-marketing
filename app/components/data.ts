@@ -190,14 +190,13 @@ export interface Activity {
 export interface PlanTask {
   text: string
   done: boolean
+  responsibility?: string  // Zodpovědnost
+  deadline?: string        // Termín
+  notes?: string           // Poznámky
 }
 
 export interface CellPlan {
   goal?: string            // Cíl / KPI
   description?: string     // Popis / strategie
   tasks?: PlanTask[]       // Úkoly (checklist)
-  responsibilities?: string // Zodpovědnosti
-  deadline?: string        // Termín přípravy
-  notes?: string           // Poznámky
-  budget?: string          // Rozpočet
 }

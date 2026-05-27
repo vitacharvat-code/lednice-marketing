@@ -13,6 +13,7 @@ export default function Calendar() {
   const [selectedCell, setSelectedCell] = useState<{ service: string; month: number } | null>(null)
   const [planDraft, setPlanDraft] = useState<CellPlan>({})
   const [newTask, setNewTask] = useState('')
+  const [expandedTask, setExpandedTask] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const taskInputRef = useRef<HTMLInputElement>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -34,6 +35,7 @@ export default function Calendar() {
       const k = cellKey(selectedCell.service, selectedCell.month)
       setPlanDraft(allPlans[k] || {})
       setNewTask('')
+      setExpandedTask(null)
     }
   }, [selectedCell?.service, selectedCell?.month])
 
@@ -88,6 +90,7 @@ export default function Calendar() {
     if (!newTask.trim()) return
     const tasks = [...(planDraft.tasks || []), { text: newTask.trim(), done: false }]
     updatePlan({ tasks })
+    setExpandedTask(tasks.length - 1)
     setNewTask('')
     setTimeout(() => taskInputRef.current?.focus(), 30)
   }
@@ -97,8 +100,15 @@ export default function Calendar() {
     updatePlan({ tasks })
   }
 
+  const updateTask = (idx: number, patch: Partial<PlanTask>) => {
+    const tasks = (planDraft.tasks || []).map((t, i) => i === idx ? { ...t, ...patch } : t)
+    updatePlan({ tasks })
+  }
+
   const removeTask = (idx: number) => {
     const tasks = (planDraft.tasks || []).filter((_, i) => i !== idx)
+    if (expandedTask === idx) setExpandedTask(null)
+    else if (expandedTask !== null && expandedTask > idx) setExpandedTask(expandedTask - 1)
     updatePlan({ tasks })
   }
 
@@ -257,23 +267,18 @@ export default function Calendar() {
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: '#fff', borderTop: '2px solid #e8e4dd',
           boxShadow: '0 -4px 24px rgba(0,0,0,0.08)',
-          zIndex: 50, height: 320, display: 'flex', flexDirection: 'column',
+          zIndex: 50, height: 340, display: 'flex', flexDirection: 'column',
         }}>
           {/* Panel header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 24px', borderBottom: '1px solid #f0ece6', flexShrink: 0 }}>
-            <div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {selectedSvc.name} · {FULL_MONTHS[selectedCell.month]}
-              </span>
-            </div>
-            <button
-              onClick={() => setSelectedCell(null)}
-              style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 20, color: '#aaa', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
-            >×</button>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '10px 24px', borderBottom: '1px solid #f0ece6', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {selectedSvc.name} · {FULL_MONTHS[selectedCell.month]}
+            </span>
+            <button onClick={() => setSelectedCell(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 20, color: '#aaa', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}>×</button>
           </div>
 
-          {/* Panel body */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, flex: 1, overflow: 'hidden' }}>
+          {/* Panel body: 2 columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', flex: 1, overflow: 'hidden' }}>
 
             {/* Col 1: Cíl + Popis */}
             <div style={{ padding: '12px 16px', borderRight: '1px solid #f0ece6', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -286,77 +291,87 @@ export default function Calendar() {
                   style={inputStyle}
                 />
               </div>
-              <div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <label style={labelStyle}>📋 Popis & strategie</label>
                 <textarea
                   value={planDraft.description || ''}
                   onChange={e => updatePlan({ description: e.target.value })}
                   placeholder="Co a jak budeme komunikovat?"
-                  rows={4}
-                  style={{ ...inputStyle, resize: 'none' }}
+                  style={{ ...inputStyle, resize: 'none', flex: 1, minHeight: 80 }}
                 />
               </div>
             </div>
 
-            {/* Col 2: Úkoly */}
-            <div style={{ padding: '12px 16px', borderRight: '1px solid #f0ece6', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={labelStyle}>✅ Úkoly</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <input
-                  ref={taskInputRef}
-                  value={newTask}
-                  onChange={e => setNewTask(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addTask()}
-                  placeholder="Přidat úkol…"
-                  style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
-                />
-                <button onClick={addTask} style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#1a1714', color: '#fff', fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>+</button>
+            {/* Col 2: Úkoly s detailem */}
+            <div style={{ padding: '12px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>✅ Úkoly</label>
+                <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                  <input
+                    ref={taskInputRef}
+                    value={newTask}
+                    onChange={e => setNewTask(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addTask()}
+                    placeholder="Nový úkol…"
+                    style={{ ...inputStyle, width: 220 }}
+                  />
+                  <button onClick={addTask} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#1a1714', color: '#fff', fontFamily: 'inherit', fontSize: 13, cursor: 'pointer' }}>+</button>
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflowY: 'auto' }}>
-                {(planDraft.tasks || []).length === 0 && (
-                  <p style={{ fontSize: 12, color: '#ccc', margin: 0 }}>Zatím žádné úkoly.</p>
-                )}
-                {(planDraft.tasks || []).map((task, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '4px 0' }}>
-                    <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)} style={{ marginTop: 2, cursor: 'pointer', flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, color: task.done ? '#aaa' : '#1a1714', textDecoration: task.done ? 'line-through' : 'none', flex: 1, lineHeight: 1.4 }}>{task.text}</span>
-                    <span onClick={() => removeTask(i)} style={{ fontSize: 14, color: '#ccc', cursor: 'pointer', flexShrink: 0 }}>×</span>
+
+              {(planDraft.tasks || []).length === 0 && (
+                <p style={{ fontSize: 12, color: '#ccc', margin: '8px 0 0' }}>Zatím žádné úkoly. Přidej první výše.</p>
+              )}
+
+              {(planDraft.tasks || []).map((task, i) => (
+                <div key={i} style={{ borderRadius: 8, border: `1px solid ${expandedTask === i ? '#c4bdb0' : '#ede9e3'}`, background: expandedTask === i ? '#faf9f6' : '#fff', overflow: 'hidden', transition: 'all 0.15s' }}>
+                  {/* Task row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px' }}>
+                    <input type="checkbox" checked={task.done} onChange={() => toggleTask(i)} style={{ cursor: 'pointer', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: task.done ? '#aaa' : '#1a1714', textDecoration: task.done ? 'line-through' : 'none', flex: 1 }}>{task.text}</span>
+                    {/* detail badges */}
+                    {task.responsibility && <span style={{ fontSize: 10, color: '#8a2f56', background: '#fdf0f5', padding: '1px 6px', borderRadius: 10 }}>👤 {task.responsibility}</span>}
+                    {task.deadline && <span style={{ fontSize: 10, color: '#9d6310', background: '#fdf6e7', padding: '1px 6px', borderRadius: 10 }}>📅 {task.deadline}</span>}
+                    <span
+                      onClick={() => setExpandedTask(expandedTask === i ? null : i)}
+                      style={{ fontSize: 11, color: '#aaa', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, background: '#f4f4f2', userSelect: 'none' }}
+                    >{expandedTask === i ? '▲' : '▼'}</span>
+                    <span onClick={() => removeTask(i)} style={{ fontSize: 15, color: '#ccc', cursor: 'pointer', lineHeight: 1 }}>×</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Col 3: Zodpovědnosti + Termín + Poznámky */}
-            <div style={{ padding: '12px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>👤 Zodpovědnosti</label>
-                <textarea
-                  value={planDraft.responsibilities || ''}
-                  onChange={e => updatePlan({ responsibilities: e.target.value })}
-                  placeholder="Kdo za co odpovídá?"
-                  rows={2}
-                  style={{ ...inputStyle, resize: 'none' }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>📅 Termín přípravy</label>
-                <input
-                  value={planDraft.deadline || ''}
-                  onChange={e => updatePlan({ deadline: e.target.value })}
-                  placeholder="Kdy musí být vše ready?"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>💬 Poznámky</label>
-                <textarea
-                  value={planDraft.notes || ''}
-                  onChange={e => updatePlan({ notes: e.target.value })}
-                  placeholder="Volné poznámky…"
-                  rows={2}
-                  style={{ ...inputStyle, resize: 'none' }}
-                />
-              </div>
+                  {/* Expandable detail */}
+                  {expandedTask === i && (
+                    <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 8, borderTop: '1px solid #f0ece6' }}>
+                      <div style={{ paddingTop: 8 }}>
+                        <label style={labelStyle}>👤 Zodpovědnost</label>
+                        <input
+                          value={task.responsibility || ''}
+                          onChange={e => updateTask(i, { responsibility: e.target.value })}
+                          placeholder="Kdo?"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div style={{ paddingTop: 8 }}>
+                        <label style={labelStyle}>📅 Termín</label>
+                        <input
+                          value={task.deadline || ''}
+                          onChange={e => updateTask(i, { deadline: e.target.value })}
+                          placeholder="Do kdy?"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div style={{ paddingTop: 8 }}>
+                        <label style={labelStyle}>💬 Poznámky</label>
+                        <input
+                          value={task.notes || ''}
+                          onChange={e => updateTask(i, { notes: e.target.value })}
+                          placeholder="Volná poznámka…"
+                          style={inputStyle}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
