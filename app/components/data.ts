@@ -21,16 +21,6 @@ export interface Service {
 export const SERVICES: Record<string, Service[]> = {
   pivovar: [
     {
-      id: 'kampane',
-      name: '📅 Příprava kampaní',
-      sub: 'lead time · podklady · spuštění',
-      color: '#5c3d99',
-      bg: '#f0ebff',
-      // Kampaně musí startovat 6–8 týdnů před vrcholem → příprava již od ledna
-      season: [1,1,1,1,1,1,1,1,1,1,1,1],
-      note: 'Každou kampaň startuj 6–8 týdnů před cílovou sezonou. Firemní jaro → spusť v únoru. Turistické léto → spusť v dubnu. Vánoční večírky → spusť v září.',
-    },
-    {
       id: 'restaurace',
       name: 'Restaurace & bar',
       sub: 'stálý provoz · celoroční',
@@ -114,15 +104,6 @@ export const SERVICES: Record<string, Service[]> = {
 
   resort: [
     {
-      id: 'kampane_resort',
-      name: '📅 Příprava kampaní',
-      sub: 'lead time · podklady · spuštění',
-      color: '#5c3d99',
-      bg: '#f0ebff',
-      season: [1,1,1,1,1,1,1,1,1,1,1,1],
-      note: 'Kampně na letní ubytování spouštět v březnu–dubnu. Zimní balíčky v říjnu–listopadu. Valentýnské balíčky v prosinci.',
-    },
-    {
       id: 'ubytovani',
       name: 'Ubytování',
       sub: 'celoroční · hlavní sezóna léto',
@@ -197,7 +178,8 @@ export interface PlanTask {
 }
 
 export interface CellPlan {
-  goal?: string            // Cíl / KPI
-  description?: string     // Popis / strategie
-  tasks?: PlanTask[]       // Úkoly (checklist)
+  theme?: string           // Téma měsíce (Tabulka 1)
+  goal?: string            // Cíl / KPI (Tabulka 1)
+  description?: string     // Popis / strategie (Tabulka 1) nebo poznámky k aktivitám (Tabulka 2)
+  tasks?: PlanTask[]       // Úkoly (Tabulka 2)
 }
