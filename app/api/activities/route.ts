@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 interface Store {
   activities: Record<string, any[]>
   plans: Record<string, any>
+  goals?: string[]
 }
 
 async function loadStore(): Promise<Store> {
@@ -43,11 +44,10 @@ export async function POST(request: Request) {
 
     if (body.type === 'plan') {
       store.plans[body.key] = body.plan
+    } else if (body.type === 'goals') {
+      store.goals = body.goals
     } else {
-      // activity (default, also handles legacy requests)
-      const key = body.key
-      const activities = body.activities
-      store.activities[key] = activities
+      store.activities[body.key] = body.activities
     }
 
     await saveStore(store)

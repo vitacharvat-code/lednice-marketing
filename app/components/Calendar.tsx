@@ -12,6 +12,15 @@ const formatDate = (iso: string) => {
   } catch { return iso }
 }
 
+const GOAL_COLORS = [
+  { bg: '#eaf3fc', color: '#15528f' },
+  { bg: '#f2f8ea', color: '#33600f' },
+  { bg: '#fdf6e7', color: '#9d6310' },
+  { bg: '#fdf0f5', color: '#8a2f56' },
+  { bg: '#efeefd', color: '#4a3fa3' },
+  { bg: '#e4f6f0', color: '#0d6048' },
+]
+
 const PRINT_STYLES = `
   @media print {
     @page { size: A3 landscape; margin: 10mm; }
@@ -36,6 +45,10 @@ export default function Calendar() {
   const [expandedTask, setExpandedTask] = useState<number | null>(null)
   const [isReadonly, setIsReadonly] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [goals, setGoals] = useState<string[]>([])
+  const [newGoal, setNewGoal] = useState('')
+  const [addingGoal, setAddingGoal] = useState(false)
+  const goalInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const taskInputRef = useRef<HTMLInputElement>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -45,10 +58,19 @@ export default function Calendar() {
     setIsReadonly(params.has('readonly'))
   }, [])
 
+  const DEFAULT_GOALS = [
+    '🌞 Plná obsazenost hlavní sezóny (čvc–srp)',
+    '🏢 Firemní klientela: jaro + podzim 80 % kapacity',
+    '❄️ Spustit zimní balíčky resort × pivovar',
+    '🎪 Aktivní přítomnost na 5+ festivalech',
+    '📱 Lokální program pro studenty (po–út)',
+  ]
+
   useEffect(() => {
     fetch('/api/activities').then(r => r.json()).then(d => {
       setAllActivities(d.activities || {})
       setAllPlans(d.plans || {})
+      setGoals(d.goals && d.goals.length > 0 ? d.goals : DEFAULT_GOALS)
       setLoading(false)
     })
   }, [])
@@ -56,6 +78,28 @@ export default function Calendar() {
   useEffect(() => {
     if (modal) setTimeout(() => inputRef.current?.focus(), 60)
   }, [modal])
+
+  useEffect(() => {
+    if (addingGoal) setTimeout(() => goalInputRef.current?.focus(), 40)
+  }, [addingGoal])
+
+  const saveGoals = async (updated: string[]) => {
+    setGoals(updated)
+    await fetch('/api/activities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'goals', goals: updated }),
+    })
+  }
+
+  const addGoal = () => {
+    if (!newGoal.trim()) return
+    saveGoals([...goals, newGoal.trim()])
+    setNewGoal('')
+    setAddingGoal(false)
+  }
+
+  const removeGoal = (idx: number) => saveGoals(goals.filter((_, i) => i !== idx))
 
   useEffect(() => {
     if (selectedCell) {
@@ -208,15 +252,16 @@ export default function Calendar() {
       <div style={{ fontFamily: "'DM Sans', sans-serif", paddingBottom: selectedCell ? '300px' : '4rem' }}>
 
         {/* Header */}
-        <header style={{ borderBottom: '1px solid #e8e4dd', padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', background: '#faf9f6' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 22 }}>🍺</span>
-              <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.3px', color: '#1a1714' }}>Lednice Marketing</h1>
+        <header style={{ borderBottom: '1px solid #e8e4dd', padding: '1.25rem 2rem', background: '#faf9f6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 22 }}>🍺</span>
+                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.3px', color: '#1a1714' }}>Lednice Marketing</h1>
+              </div>
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: '#7a7570' }}>Roční marketingový plán</p>
             </div>
-            <p style={{ margin: '2px 0 0', fontSize: 13, color: '#7a7570' }}>Roční marketingový plán</p>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }} className="no-print">
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }} className="no-print">
             {saving && <span style={{ fontSize: 12, color: '#9d6310', background: '#fdf6e7', padding: '3px 10px', borderRadius: 20, border: '1px solid #e8c97a' }}>Ukládám…</span>}
             {totalActs > 0 && <span style={{ fontSize: 12, color: '#555', background: '#f1efea', padding: '3px 10px', borderRadius: 20 }}>{totalActs} aktivit</span>}
             {isReadonly && <span style={{ fontSize: 12, color: '#fff', background: '#9d6310', padding: '3px 10px', borderRadius: 20 }}>👁 Read-only</span>}
@@ -228,6 +273,46 @@ export default function Calendar() {
             <button onClick={handleExportPDF} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', color: '#555', display: 'flex', alignItems: 'center', gap: 5 }}>
               📄 Export PDF
             </button>
+            </div>
+          </div>
+
+          {/* Cíle — štítky */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10, alignItems: 'center' }}>
+            {goals.map((goal, i) => (
+              <span key={i} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                fontSize: 12, padding: '4px 10px', borderRadius: 20,
+                background: GOAL_COLORS[i % GOAL_COLORS.length].bg,
+                color: GOAL_COLORS[i % GOAL_COLORS.length].color,
+                border: `1px solid ${GOAL_COLORS[i % GOAL_COLORS.length].color}33`,
+                fontWeight: 500,
+              }}>
+                {goal}
+                {!isReadonly && (
+                  <span onClick={() => removeGoal(i)} style={{ cursor: 'pointer', opacity: 0.4, fontSize: 13, lineHeight: 1, marginLeft: 2 }} className="no-print">×</span>
+                )}
+              </span>
+            ))}
+            {!isReadonly && (
+              addingGoal ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }} className="no-print">
+                  <input
+                    ref={goalInputRef}
+                    value={newGoal}
+                    onChange={e => setNewGoal(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') addGoal(); if (e.key === 'Escape') { setAddingGoal(false); setNewGoal('') } }}
+                    placeholder="Nový cíl…"
+                    style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, border: '1.5px solid #c4bdb0', fontFamily: 'inherit', outline: 'none', width: 200, background: '#fff' }}
+                  />
+                  <button onClick={addGoal} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: 'none', background: '#1a1714', color: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>Přidat</button>
+                  <button onClick={() => { setAddingGoal(false); setNewGoal('') }} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: '1px solid #ddd', background: '#fff', fontFamily: 'inherit', cursor: 'pointer', color: '#888' }}>Zrušit</button>
+                </span>
+              ) : (
+                <span onClick={() => setAddingGoal(true)} className="no-print" style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, border: '1px dashed #c4bdb0', color: '#aaa', cursor: 'pointer', background: 'transparent' }}>
+                  + přidat cíl
+                </span>
+              )
+            )}
           </div>
         </header>
 
