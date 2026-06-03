@@ -59,11 +59,12 @@ export default function Calendar() {
   }, [])
 
   const DEFAULT_GOALS = [
-    '🌞 Plná obsazenost hlavní sezóny (čvc–srp)',
-    '🏢 Firemní klientela: jaro + podzim 80 % kapacity',
-    '❄️ Spustit zimní balíčky resort × pivovar',
-    '🎪 Aktivní přítomnost na 5+ festivalech',
-    '📱 Lokální program pro studenty (po–út)',
+    '📈 Snížit OTA závislost: 65 % → 50 % přímých rezervací',
+    '🏢 Firemní akce jaro + podzim: 80 % kapacity',
+    '❄️ Spustit zimní balíčky resort × pivovar (leden–únor)',
+    '🎄 Prodat 80 % vánoční kapacity — kampaň od září',
+    '🍽️ Zvýšit obědovou návštěvnost o 30 % (po–pá)',
+    '🎪 Aktivní přítomnost na min. 5 festivalech',
   ]
 
   useEffect(() => {
